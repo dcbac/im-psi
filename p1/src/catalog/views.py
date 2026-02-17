@@ -52,7 +52,7 @@ def index(request):
 class BookListView(generic.ListView):
     model = Book
     # context_object_name = 'book_list'   # your own name for the list as a template variable
-    paginate_by = 2
+    paginate_by = 4
     ordering = ["title"]
     # queryset = Book.objects.filter(title__icontains='war')[:5] # Get 5 books containing the title war
     # template_name = 'books/my_arbitrary_template_name_list.html'  # Specify your own template name/location
@@ -64,7 +64,7 @@ class BookDetailView(generic.DetailView):
 
 class AuthorListView(generic.ListView):
     model = Author
-    paginate_by = 2
+    paginate_by = 4
 
 
 class AuthorDetailView(generic.DetailView):
@@ -76,7 +76,7 @@ class LoanedBooksByUserListView(LoginRequiredMixin, generic.ListView):
 
     model = BookInstance
     template_name = "catalog/bookinstance_list_borrowed_user.html"
-    paginate_by = 10
+    paginate_by = 4
 
     def get_queryset(self):
         return (
@@ -87,11 +87,11 @@ class LoanedBooksByUserListView(LoginRequiredMixin, generic.ListView):
 
 
 class BookInstanceListView(PermissionRequiredMixin, generic.ListView):
-    permission_required = "staff"
+    permission_required = "catalog.can_mark_returned"
     model = BookInstance
 
     template_name = "catalog/bookinstance_list.html"
-    paginate_by = 10
+    paginate_by = 4
 
     def get_queryset(self):
         return BookInstance.objects.filter(status__exact="o").order_by("due_back")

@@ -10,7 +10,7 @@ from django.urls import reverse, reverse_lazy
 
 
 from .models import Book, Author, BookInstance, Genre, Author
-from .forms import RenewBookModelForm
+from .forms import RenewBookForm
 
 
 def index(request):
@@ -52,7 +52,7 @@ def index(request):
 class BookListView(generic.ListView):
     model = Book
     # context_object_name = 'book_list'   # your own name for the list as a template variable
-    paginate_by = 4
+    paginate_by = 2
     ordering = ["title"]
     # queryset = Book.objects.filter(title__icontains='war')[:5] # Get 5 books containing the title war
     # template_name = 'books/my_arbitrary_template_name_list.html'  # Specify your own template name/location
@@ -106,7 +106,7 @@ def renew_book_librarian(request, pk):
     # If this is a POST request then process the Form data
     if request.method == "POST":
         # Create a form instance and populate it with data from the request (binding):
-        form = RenewBookModelForm(request.POST)
+        form = RenewBookForm(request.POST)
 
         # Check if the form is valid:
         if form.is_valid():
@@ -120,7 +120,7 @@ def renew_book_librarian(request, pk):
     # If this is a GET (or any other method) create the default form.
     else:
         proposed_renewal_date = datetime.date.today() + datetime.timedelta(weeks=3)
-        form = RenewBookModelForm(initial={"due_back": proposed_renewal_date})
+        form = RenewBookForm(initial={"due_back": proposed_renewal_date})
 
     context = {
         "form": form,

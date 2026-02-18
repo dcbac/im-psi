@@ -7,7 +7,7 @@ from django.utils.translation import gettext_lazy as _
 from catalog.models import BookInstance
 
 
-class RenewBookModelForm(ModelForm):
+class RenewBookForm(ModelForm):
     def clean_due_back(self):
         data = self.cleaned_data["due_back"]
 

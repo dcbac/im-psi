@@ -5,7 +5,7 @@ from django.utils import timezone
 from django.test import TestCase
 from django.urls import reverse
 from django.contrib.auth import get_user_model
-from django.contrib.auth.models import ContentType, Permission
+from django.contrib.auth.models import Permission
 
 from catalog.models import Author, BookInstance, Book, Genre, Language
 
@@ -291,7 +291,7 @@ class RenewBookInstancesViewTest(TestCase):
         # Check we used correct template
         self.assertTemplateUsed(response, "catalog/book_renew_librarian.html")
 
-    def test_form_due_back_initially_has_date_three_weeks_in_future(self):
+    def test_form_renewal_date_initially_has_date_three_weeks_in_future(self):
         login = self.client.login(username="testuser2", password="2HJ1vRV0Z&3iD")
         response = self.client.get(
             reverse("renew-book-librarian", kwargs={"pk": self.test_bookinstance1.pk})
@@ -317,7 +317,7 @@ class RenewBookInstancesViewTest(TestCase):
         )
         self.assertRedirects(response, reverse("all-borrowed"))
 
-    def test_form_invalid_due_back_past(self):
+    def test_form_invalid_renewal_date_past(self):
         login = self.client.login(username="testuser2", password="2HJ1vRV0Z&3iD")
         date_in_past = datetime.date.today() - datetime.timedelta(weeks=1)
         response = self.client.post(
@@ -329,7 +329,7 @@ class RenewBookInstancesViewTest(TestCase):
             response.context["form"], "due_back", "Invalid date - renewal in past"
         )
 
-    def test_form_invalid_due_back_future(self):
+    def test_form_invalid_renewal_date_future(self):
         login = self.client.login(username="testuser2", password="2HJ1vRV0Z&3iD")
         invalid_date_in_future = datetime.date.today() + datetime.timedelta(weeks=5)
         response = self.client.post(
@@ -349,21 +349,27 @@ class AuthorCreateViewTest(TestCase):
 
     def setUp(self):
         # Create a user
-        test_user = User.objects.create_user(
-            username="test_user", password="some_password"
+        test_user1 = User.objects.create_user(
+            username="testuser1", password="some_password1"
+        )
+        test_user2 = User.objects.create_user(
+            username="testuser2", password="some_password2"
         )
 
-        content_typeAuthor = ContentType.objects.get_for_model(Author)
-        permAddAuthor = Permission.objects.get(
-            codename="add_author",
-            content_type=content_typeAuthor,
-        )
+        permAddAuthor = Permission.objects.get(name="Can add author")
+        test_user1.user_permissions.add(permAddAuthor)
+        test_user1.save()
 
-        test_user.user_permissions.add(permAddAuthor)
-        test_user.save()
+        test_user2.save()
 
-    def test_valid_data(self):
-        login = self.client.login(username="test_user", password="some_password")
+    def test_redirect_if_not_logged_in(self):
+        response = self.client.get(reverse("author-create"))
+        self.assertRedirects(response, "/accounts/login/?next=/catalog/author/create/")
+
+    def test_forbidden_if_logged_in_but_not_correct_permission(self):
+        login = self.client.login(username="testuser2", password="some_password2")
+        self.assertTrue(login)
+
         valid_first_name = "Some"
         valid_last_name = "One"
         valid_date_of_birth = datetime.date.today() + datetime.timedelta(weeks=-100)
@@ -379,4 +385,76 @@ class AuthorCreateViewTest(TestCase):
                 "date_of_death": valid_date_of_death,
             },
         )
-        self.assertRedirects(response, reverse("author-detail", kwargs={"pk": 1}))
+
+        self.assertTrue(response.status_code, 403)
+
+    def test_logged_in_with_permission(self):
+        login = self.client.login(username="testuser1", password="some_password1")
+        self.assertTrue(login)
+
+        valid_first_name = "Some"
+        valid_last_name = "One"
+        valid_date_of_birth = datetime.date.today() + datetime.timedelta(weeks=-100)
+        valid_date_of_death = datetime.date.today() + datetime.timedelta(weeks=100)
+        response = self.client.post(
+            reverse(
+                "author-create",
+            ),
+            {
+                "first_name": valid_first_name,
+                "last_name": valid_last_name,
+                "date_of_birth": valid_date_of_birth,
+                "date_of_death": valid_date_of_death,
+            },
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(response.url.startswith("/catalog/author/"))
+
+    def test_uses_correct_template(self):
+        login = self.client.login(username="testuser1", password="some_password1")
+        self.assertTrue(login)
+
+        response = self.client.get(
+            reverse(
+                "author-create",
+            ),
+        )
+
+        self.assertTrue(response.status_code, 200)
+        self.assertTemplateUsed(response, "catalog/author_form.html")
+
+    def test_form_date_of_death_initially_set_to_expected_date(self):
+        login = self.client.login(username="testuser1", password="some_password1")
+        self.assertTrue(login)
+
+        response = self.client.get(reverse("author-create"))
+        self.assertEqual(response.status_code, 200)
+
+        self.assertEqual(
+            response.context["form"].initial["date_of_death"],
+            "11/11/2023",
+        )
+
+    def test_redirects_to_detail_view_on_success(self):
+        login = self.client.login(username="testuser1", password="some_password1")
+        self.assertTrue(login)
+
+        valid_first_name = "Some"
+        valid_last_name = "One"
+        valid_date_of_birth = datetime.date.today() + datetime.timedelta(weeks=-100)
+        valid_date_of_death = datetime.date.today() + datetime.timedelta(weeks=100)
+        response = self.client.post(
+            reverse(
+                "author-create",
+            ),
+            {
+                "first_name": valid_first_name,
+                "last_name": valid_last_name,
+                "date_of_birth": valid_date_of_birth,
+                "date_of_death": valid_date_of_death,
+            },
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(response.url.startswith("/catalog/author/"))

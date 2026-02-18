@@ -44,3 +44,8 @@ class RenewBookFormTest(TestCase):
         date = timezone.localtime() + datetime.timedelta(weeks=4)
         form = RenewBookForm(data={"due_back": date})
         self.assertTrue(form.is_valid())
+
+    def test_renew_form_date_none_provided(self):
+        form = RenewBookForm(data={"due_back": None})
+        self.assertFalse(form.is_valid())
+        self.assertIn("Invalid date - none provided", form.errors["due_back"])

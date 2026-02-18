@@ -8,7 +8,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Permission
 
 from catalog.models import Author, BookInstance, Book, Genre, Language
-
+from unittest.mock import patch
 
 class AuthorListViewTest(TestCase):
     @classmethod
@@ -458,3 +458,118 @@ class AuthorCreateViewTest(TestCase):
 
         self.assertEqual(response.status_code, 302)
         self.assertTrue(response.url.startswith("/catalog/author/"))
+
+class AuthorDeleteViewTest(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username='testuser', password='12345')
+        permission = Permission.objects.get(codename='delete_author')
+        self.user.user_permissions.add(permission)
+        self.user.save()
+
+        self.author = Author.objects.create(
+            first_name='John',
+            last_name='Doe'
+        )
+
+    def test_author_delete_success(self):
+        self.client.login(username='testuser', password='12345')
+
+        response = self.client.post(
+            reverse('author-delete', args=[self.author.pk])
+        )
+
+        self.assertRedirects(response, reverse('authors'))
+        self.assertFalse(Author.objects.filter(pk=self.author.pk).exists())
+
+class BookDeleteViewTest(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username='testuser', password='12345')
+        permission = Permission.objects.get(codename='delete_book')
+        self.user.user_permissions.add(permission)
+        self.user.save()
+
+        self.author = Author.objects.create(first_name='Jane', last_name='Doe')
+
+        self.book = Book.objects.create(
+            title='Test Book',
+            author=self.author,
+            summary='Test summary',
+            isbn='1234567890123'
+        )
+
+    def test_book_delete_success(self):
+        self.client.login(username='testuser', password='12345')
+
+        response = self.client.post(
+            reverse('book-delete', args=[self.book.pk])
+        )
+
+        # Comprueba redirección correcta
+        self.assertRedirects(response, reverse('books'))
+
+        # Comprueba que el libro fue eliminado
+        self.assertFalse(Book.objects.filter(pk=self.book.pk).exists())
+
+class AuthorDeleteExceptionTest(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username='testuser', password='12345')
+        permission = Permission.objects.get(codename='delete_author')
+        self.user.user_permissions.add(permission)
+        self.user.save()
+
+        self.author = Author.objects.create(
+            first_name='John',
+            last_name='Doe'
+        )
+
+    @patch("catalog.models.Author.delete")
+    def test_author_delete_exception_redirects_back(self, mock_delete):
+        # Forzamos excepción
+        mock_delete.side_effect = Exception("Delete failed")
+
+        self.client.login(username='testuser', password='12345')
+
+        response = self.client.post(
+            reverse('author-delete', args=[self.author.pk])
+        )
+
+        self.assertRedirects(
+            response,
+            reverse('author-delete', args=[self.author.pk])
+        )
+
+        self.assertTrue(Author.objects.filter(pk=self.author.pk).exists())
+
+class BookDeleteExceptionTest(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username='testuser', password='12345')
+        permission = Permission.objects.get(codename='delete_book')
+        self.user.user_permissions.add(permission)
+        self.user.save()
+
+        self.author = Author.objects.create(first_name='Jane', last_name='Doe')
+
+        self.book = Book.objects.create(
+            title='Test Book',
+            author=self.author,
+            summary='Test summary',
+            isbn='1234567890123'
+        )
+
+    @patch("catalog.models.Book.delete")
+    def test_book_delete_exception_redirects_back(self, mock_delete):
+        # Forzamos excepción
+        mock_delete.side_effect = Exception("Delete failed")
+
+        self.client.login(username='testuser', password='12345')
+
+        response = self.client.post(
+            reverse('book-delete', args=[self.book.pk])
+        )
+
+        self.assertRedirects(
+            response,
+            reverse('book-delete', args=[self.book.pk])
+        )
+
+        self.assertTrue(Book.objects.filter(pk=self.book.pk).exists())

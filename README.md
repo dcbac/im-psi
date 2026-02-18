@@ -18,3 +18,5 @@ Sobre las credenciales de `neon.tech`:
 Este repositorio se ha hecho público para poder darle acceso a `render`.
 Por esta razón, las credenciales de la base de datos de producción y el token secreto de `django` se han configurado exclusivamente en `render` y no corresponen a los presentes en la historia de git de este repo.
 Como consecuencia, a menos que se especifique `TESTING=1` como variable de entorno en la línea de comandos, las ejecuciones en local van a fallar.
+
+La URL asignada por `render` para este proyecto es: [https://p1-15-2401-2026-1.onrender.com/catalog/](https://p1-15-2401-2026-1.onrender.com/catalog/)

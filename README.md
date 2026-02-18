@@ -3,6 +3,7 @@
 Ejecución de la aplicacion en entorno de prueba (con base de datos local):
 ```sh
 DEBUG=1 TESTING=1 python manage.py migrate
+DEBUG=1 TESTING=1 python manage.py populate_catalog.py
 DEBUG=1 TESTING=1 python manage.py createsuperuser
 DEBUG=1 TESTING=1 python manage.py runserver 8001
 ```

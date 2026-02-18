@@ -10,23 +10,28 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
-from pathlib import Path
 import os
+from pathlib import Path
+from dotenv import load_dotenv
+
 import dj_database_url
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+load_dotenv()
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "django-insecure-*9#7vj7=5xxr()q36-#-n(v80zxij$uup%1#a+gy&9*#f=ik1x"
+SECRET_KEY = os.getenv(
+    "SECRET_KEY", "django-insecure-*9#7vj7=5xxr()q36-#-n(v80zxij$uup%1#a+gy&9*#f=ik1x"
+)
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv("DEBUG", False)
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [os.getenv("ALLOWED_HOSTS", "*")]
 
 
 # Application definition
@@ -38,6 +43,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "django_extensions",
     "catalog.apps.CatalogConfig",
 ]
 
@@ -74,16 +80,17 @@ WSGI_APPLICATION = "locallibrary.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
-    }
-}
+DATABASES = {"default": {}}
 
-db_from_env = dj_database_url.config(
-    default="postgres://alumnodb:alumnodb@localhost:5432/psi", conn_max_age=500
-)
+if "TESTING" in os.environ:
+    db_from_env = dj_database_url.config(
+        default=os.getenv("POSTGRESQL_URL"), conn_max_age=500
+    )
+else:
+    db_from_env = dj_database_url.config(
+        default=os.getenv("NEON_URL"), conn_max_age=500
+    )
+
 DATABASES["default"].update(db_from_env)
 
 # Password validation

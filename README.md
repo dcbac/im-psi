@@ -17,7 +17,7 @@ Pruebas de covertura:
 ```sh
 DEBUG=1 TESTING=1 coverage erase
 DEBUG=1 TESTING=1 coverage run --omit="*/test*" --source=catalog manage.py test catalog.tests
-DEBUG=1 TESTING=1 coverage report -m -i
+DEBUG=1 TESTING=1 coverage report -m -i | tee -a coverage.txt
 ```
 
 **Observaciones.**

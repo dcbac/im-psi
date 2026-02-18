@@ -12,6 +12,13 @@ Ejecución de la batería de tests (con base de datos local):
 DEBUG=1 TESTING=1 python manage.py test catalog.tests --verbosity 2
 ```
 
+Pruebas de covertura:
+```sh
+DEBUG=1 TESTING=1 coverage erase
+DEBUG=1 TESTING=1 coverage run --omit="*/test*" --source=catalog manage.py test catalog.tests
+DEBUG=1 TESTING=1 coverage report -m -i
+```
+
 **Observaciones.**
 Sobre las credenciales de `neon.tech`:
 
